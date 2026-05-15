@@ -1,0 +1,8 @@
+# Ignore the virtual environment folder
+venv/
+
+# Ignore Python cache folders
+__pycache__/
+
+# Ignore CSV data files to save bandwidth and protect raw data
+*.csv
