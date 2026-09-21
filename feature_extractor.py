@@ -1,5 +1,6 @@
 # Import TfidfVectorizer from sklearn.feature_extraction.text
 from sklearn.feature_extraction.text import TfidfVectorizer
+import joblib
 # Define the FeatureExtractor class
 class FeatureExtractor:
 
@@ -28,7 +29,13 @@ class FeatureExtractor:
         
         # Return the resulting matrix
         return matrix
-    
+
+
+# Inside class FeatureExtractor
+    # Save the fitted vectorizer object to disk
+    def save_vectorizer(self, file_path):
+        # Dump vectorizer object
+        joblib.dump(self.vectorizer, file_path)
 # Check if the script is being run directly
 if __name__ == '__main__':
     

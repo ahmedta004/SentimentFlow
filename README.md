@@ -1,17 +1,24 @@
+# Real-Time Customer Feedback Analyzer (Domain-Agnostic ML Engine)
 
-# SentimentFlow
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat&logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat&logo=fastapi)
+![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-F89939?style=flat&logo=scikit-learn&logoColor=white)
+![Pytest](https://img.shields.io/badge/Testing-Pytest-yellow?style=flat&logo=pytest)
 
-**SentimentFlow** is a highly scalable, real-time Natural Language Processing (NLP) pipeline designed to classify text sentiment with sub-millisecond latency. Built with a strictly modular, **domain-agnostic architecture**, it can seamlessly adapt to any text dataset (Telecom, E-commerce, Reviews) without altering the core engine.
+A production-ready, low-latency microservice designed to ingest, process, and classify customer sentiment in real-time. Built with pure OOP principles, an abstracted configuration layer, and a high-performance FastAPI asynchronous interface.
 
-Powered by **FastAPI** for asynchronous high-performance routing and **Scikit-Learn** for lightweight, memory-efficient machine learning, this project demonstrates production-ready engineering practices including scope protection, data leakage prevention, and clean OOP design.
+---
 
-###  Key Architectural Features:
-
--   **Real-Time Inference:** Utilizes FastAPI's ASGI framework and startup-event model loading to ensure zero disk I/O during client requests.
+## Architecture Overview
+``` mermaid
+flowchart TD
+    A([Raw Input / API Request]) --> B
     
--   **Domain-Agnostic Pipeline:** Completely decoupled Text Preprocessor and Feature Extractor, allowing for immediate retraining on new datasets.
+    subgraph Pipeline [TextPreprocessor Pipeline]
+        B[Regex Normalization -> NLTK Stemming]
+    end
     
--   **Memory & Compute Efficient:** Employs TF-IDF Vectorization and Logistic Regression optimized for sparse matrices to maintain low RAM consumption.
-    
--   **Data Validation:** Integrates Pydantic schemas to strictly validate incoming JSON payloads and prevent server crashes.
-  
+    B --> C[FeatureExtractor: TF-IDF Transform]
+    C --> D[ModelBuilder: Logistic Regression Inference]
+    D --> E([JSON Response: Sentiment + Confidence Score])
+```

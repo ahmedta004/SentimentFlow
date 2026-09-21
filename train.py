@@ -1,74 +1,64 @@
-# Import train_test_split from sklearn.model_selection
+# Import json library
+import json
+
+# Import train_test_split from sklearn
 from sklearn.model_selection import train_test_split
 
-# Import joblib
+# Import classification_report and accuracy_score
+from sklearn.metrics import classification_report, accuracy_score
+
+# Import joblib for model serialization
 import joblib
 
-# Import DataLoader from data_loader
+# Import custom pipeline modules
 from data_loader import DataLoader
-# Import TextPreprocessor from text_preprocessor
 from text_preprocessor import TextPreprocessor
-# Import FeatureExtractor from feature_extractor
 from feature_extractor import FeatureExtractor
-# Import ModelBuilder from model_builder
 from model_builder import ModelBuilder
 
-# Check if the script is being run directly
-if __name__ == '__main__':
+# Load configuration from config.json
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
 
-    # --- 1. DATA INGESTION ---
-    # Initialize DataLoader with your dataset path (e.g., 'dataset.csv')
-    loader = DataLoader('tweets.csv')
-    
-    # Load the data and store it in a dataframe variable named df
-    df = loader.load_data()
-    
-    # Extract the texts into a variable X and the labels into a variable y
-    # Hint: X = df['text_column_name'], y = df['label_column_name']
-    X = df['text']
-    y = df['airline_sentiment']    
-    # --- 2. DATA SPLITTING (Preventing Data Leakage) ---
-    # Split X and y into X_train, X_test, y_train, y_test using train_test_split with test_size=0.2 and random_state=42
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    # --- 3. TEXT PREPROCESSING ---
-    # Initialize the TextPreprocessor
-    preprocessor = TextPreprocessor()
-    # Apply the preprocess method to each text in X_train using a list comprehension, store in X_train_clean
-    X_train_clean = [preprocessor.preprocess(x) for x in X_train]
-    
-    # Apply the preprocess method to each text in X_test using a list comprehension, store in X_test_clean
-    X_test_clean = [preprocessor.preprocess(x) for x in X_test]
-    
-    # --- 4. FEATURE EXTRACTION (VECTORIZATION) ---
-    # Initialize the FeatureExtractor
-    extractor = FeatureExtractor()
-    
-    # Call fit_transform on the extractor using X_train_clean and store in X_train_vec
-    X_train_vec = extractor.fit_transform(X_train_clean)
-    # Call transform ONLY on the extractor using X_test_clean and store in X_test_vec
-    X_test_vec = extractor.transform(X_test_clean)
-    
-    # --- 5. MODEL TRAINING & EVALUATION ---
-    # Initialize the ModelBuilder
-    builder = ModelBuilder()
-    
-    # Call the train method on the model using X_train_vec and y_train
-    builder.train(X_train_vec, y_train)
-    
-    # Call the predict method on the model using X_test_vec and store in y_pred
-    y_pred = builder.predict(X_test_vec)
-    
-    # Call the evaluate method on the model using y_test and y_pred
-    builder.evaluate(y_test,y_pred)
-    
-    # --- 6. SERIALIZATION (SAVING THE SYSTEM) ---
-    # Save the trained LogisticRegression model to a file named 'model.joblib' using joblib.dump
-    # Hint: joblib.dump(model_instance.model, 'model.joblib')
-    joblib.dump(builder.model, 'model.joblib')
-    
-    # Save the fitted TfidfVectorizer to a file named 'vectorizer.joblib' using joblib.dump
-    # Hint: joblib.dump(extractor_instance.vectorizer, 'vectorizer.joblib')
-    joblib.dump(extractor.vectorizer,'vectorizer.joblib')
-    
-    # Print a success message indicating the training is complete and files are saved
-    print("trained successfully! ")
+# Initialize DataLoader with dataset path from config
+data_loader = DataLoader(file_path=config['dataset_path'])
+raw_dataframe = data_loader.load_data()
+
+# Initialize TextPreprocessor
+text_preprocessor = TextPreprocessor()
+
+# Extract and clean feature column dynamically
+raw_texts = raw_dataframe[config['text_column']]
+clean_texts = [text_preprocessor.preprocess(text) for text in raw_texts]
+
+# Extract target labels dynamically
+target_labels = raw_dataframe[config['target_column']]
+
+# Split dataset into training and testing sets
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+    clean_texts,
+    target_labels,
+    test_size=config['test_size'],
+    random_state=config['random_state']
+)
+
+# Initialize and fit FeatureExtractor
+feature_extractor = FeatureExtractor()
+X_train_vectorized = feature_extractor.fit_transform(X_train_raw)
+X_test_vectorized = feature_extractor.transform(X_test_raw)
+
+# Initialize and train ModelBuilder
+model_builder = ModelBuilder()
+model_builder.train(X_train_vectorized, y_train)
+
+# Evaluate model performance
+y_pred = model_builder.predict(X_test_vectorized)
+print("--- Model Accuracy ---")
+print(accuracy_score(y_test, y_pred))
+print("--- Classification Report ---")
+print(classification_report(y_test, y_pred))
+
+# Save trained model and vectorizer artifacts
+model_builder.save_model('model.joblib')
+feature_extractor.save_vectorizer('vectorizer.joblib')
+print("Artifacts saved successfully!")
